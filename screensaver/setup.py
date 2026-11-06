@@ -10,6 +10,14 @@ import subprocess
 import sys
 
 
+def reload_idle_service():
+    # Omarchy deliberately keeps idle/lock services alive across plugin rescans.
+    # A shell restart is required to load a changed screensaver command.
+    result = subprocess.run(['omarchy', 'restart', 'shell'])
+    if result.returncode:
+        sys.exit('Idle service saved, but the shell could not restart. Check that your desktop is unlocked, then run: omarchy restart shell')
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--uninstall', action='store_true')
@@ -23,11 +31,12 @@ def main():
             return
         saved = json.loads(record.read_text())
         service = Path(saved['service'])
-        if service.read_text() != saved['installed']:
+        original = (state / 'Service.qml.original').read_text()
+        if service.read_text() not in (saved['installed'], original):
             sys.exit('Idle plugin changed since setup. Restore the saved original manually: ' + str(state / 'Service.qml.original'))
-        service.write_text((state / 'Service.qml.original').read_text())
+        service.write_text(original)
+        reload_idle_service()
         record.unlink()
-        subprocess.run(['omarchy-shell', 'shell', 'rescanPlugins'], check=True)
         print('Standard screensaver restored; your idle and lock times are unchanged.')
         return
 
@@ -38,7 +47,10 @@ def main():
     if record.exists():
         saved = json.loads(record.read_text())
         if Path(saved['service']).read_text() == saved['installed']:
-            print('Screensaver integration is already installed.')
+            plugin_name = Path(saved['service']).parent.name
+            subprocess.run(['omarchy', 'plugin', 'enable', plugin_name], check=True)
+            reload_idle_service()
+            print('Screensaver integration is installed and reloaded.')
             return
         sys.exit('An earlier installation exists but its idle plugin has changed. See ' + str(state))
     plugin = home / '.config/omarchy/plugins' / (getpass.getuser() + '.idle')
@@ -58,6 +70,7 @@ def main():
     service.write_text(installed)
     subprocess.run(['omarchy-shell', 'shell', 'rescanPlugins'], check=True)
     subprocess.run(['omarchy', 'plugin', 'enable', plugin.name], check=True)
+    reload_idle_service()
     print('Triforce + Navi screensaver enabled. Your idle and lock times are unchanged.')
 
 

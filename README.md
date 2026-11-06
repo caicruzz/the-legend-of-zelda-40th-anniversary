@@ -51,7 +51,9 @@ To use it automatically when idle:
 python3 ~/.config/omarchy/themes/the-legend-of-zelda-40th-anniversary/screensaver/setup.py
 ```
 
-Setup clones Omarchy's idle service into your user configuration when necessary, backs up its original service, and connects this theme's launcher. It preserves your idle and lock timeouts. Switching to another theme uses Omarchy's standard screensaver. Press any key or move the mouse to dismiss.
+Setup clones Omarchy's idle service into your user configuration when necessary, backs up its original service, and connects this theme's launcher. It then restarts the Omarchy shell so the running idle service uses the new command; the bar briefly reloads. Run setup while your desktop is unlocked. It preserves your idle and lock timeouts. Switching to another theme uses Omarchy's standard screensaver. Press any key or move the mouse to dismiss.
+
+If you installed the screensaver before this restart fix, run `omarchy restart shell` once while unlocked. A plugin rescan alone does not reload Omarchy's protected idle service.
 
 If you already have a custom idle launcher, setup stops without replacing it. The preview command remains available. Setup does not change the System → Screensaver menu.
 
